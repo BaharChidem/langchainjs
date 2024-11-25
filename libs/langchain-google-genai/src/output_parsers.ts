@@ -10,7 +10,9 @@ import { ToolCall } from "@langchain/core/messages/tool";
 interface GoogleGenerativeAIToolsOutputParserParams<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   T extends Record<string, any>
-> extends JsonOutputKeyToolsParserParams<T> {}
+> extends JsonOutputKeyToolsParserParams<T> {
+  toolChoice?: string;
+}
 
 export class GoogleGenerativeAIToolsOutputParser<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -32,11 +34,14 @@ export class GoogleGenerativeAIToolsOutputParser<
 
   zodSchema?: z.ZodType<T>;
 
+  toolChoice?: string;
+
   constructor(params: GoogleGenerativeAIToolsOutputParserParams<T>) {
     super(params);
     this.keyName = params.keyName;
     this.returnSingle = params.returnSingle ?? this.returnSingle;
     this.zodSchema = params.zodSchema;
+    this.toolChoice = params.toolChoice ?? "any";
   }
 
   protected async _validateResult(result: unknown): Promise<T> {
@@ -66,13 +71,26 @@ export class GoogleGenerativeAIToolsOutputParser<
       }
       return message.tool_calls as ToolCall[];
     });
-    if (tools[0] === undefined) {
+
+    console.log("Available Tools:", tools);
+    console.log("Tool Choice:", this.toolChoice);
+
+    const filteredTools = this.toolChoice && this.toolChoice !== "any"
+      ? tools.filter((tool) => tool.name === this.toolChoice)
+      : tools;
+
+    if (filteredTools[0] === undefined) {
       throw new Error(
-        "No parseable tool calls provided to GoogleGenerativeAIToolsOutputParser."
+        this.toolChoice
+          ? `No tool calls match the specified toolChoice: ${this.toolChoice}`
+          : "No parseable tool calls provided to GoogleGenerativeAIToolsOutputParser."
       );
     }
-    const [tool] = tools;
+
+    const [tool] = filteredTools;
+    console.log("Selected Tool:", tool);
     const validatedResult = await this._validateResult(tool.args);
+    console.log("Validated Result:", validatedResult);
     return validatedResult;
   }
 }
