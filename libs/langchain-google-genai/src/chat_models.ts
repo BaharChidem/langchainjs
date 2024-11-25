@@ -683,13 +683,21 @@ export class ChatGoogleGenerativeAI
 
   invocationParams(
     options?: this["ParsedCallOptions"]
-  ): Omit<GenerateContentRequest, "contents"> {
+  ): Omit<GenerateContentRequest, "contents"> {  
     const toolsAndConfig = options?.tools?.length
       ? convertToolsToGenAI(options.tools, {
           toolChoice: options.tool_choice ?? "any",
           allowedFunctionNames: options.allowedFunctionNames,
         })
       : undefined;
+
+      if (options?.tools?.length && !toolsAndConfig?.toolConfig) {
+        throw new Error(
+          options.tools.length === 1
+            ? `Tool choice is required or inferred from a single tool (${options.tools[0].name}).`
+            : "Tool choice must be explicitly defined when multiple tools are provided."
+        );
+      }
 
     return {
       ...(toolsAndConfig?.tools ? { tools: toolsAndConfig.tools } : {}),

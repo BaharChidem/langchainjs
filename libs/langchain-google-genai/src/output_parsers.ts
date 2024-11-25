@@ -72,9 +72,6 @@ export class GoogleGenerativeAIToolsOutputParser<
       return message.tool_calls as ToolCall[];
     });
 
-    console.log("Available Tools:", tools);
-    console.log("Tool Choice:", this.toolChoice);
-
     const filteredTools = this.toolChoice && this.toolChoice !== "any"
       ? tools.filter((tool) => tool.name === this.toolChoice)
       : tools;
@@ -88,9 +85,7 @@ export class GoogleGenerativeAIToolsOutputParser<
     }
 
     const [tool] = filteredTools;
-    console.log("Selected Tool:", tool);
     const validatedResult = await this._validateResult(tool.args);
-    console.log("Validated Result:", validatedResult);
     return validatedResult;
   }
 }

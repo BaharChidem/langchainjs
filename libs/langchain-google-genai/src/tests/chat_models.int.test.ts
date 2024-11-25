@@ -399,6 +399,8 @@ test("ChatGoogleGenerativeAI can bind and invoke genai tools", async () => {
     tools: [googleGenAITool],
   });
   const res = await modelWithTools.invoke([prompt]);
+  console.log("Tool Calls:", res.tool_calls); // Log tool calls
+  console.log("Response:", res);
   const toolCalls = res.tool_calls;
   expect(toolCalls).toBeDefined();
   if (!toolCalls) {
