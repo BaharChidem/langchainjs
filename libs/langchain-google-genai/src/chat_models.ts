@@ -686,7 +686,7 @@ export class ChatGoogleGenerativeAI
   ): Omit<GenerateContentRequest, "contents"> {
     const toolsAndConfig = options?.tools?.length
       ? convertToolsToGenAI(options.tools, {
-          toolChoice: options.tool_choice,
+          toolChoice: options.tool_choice ?? "any",
           allowedFunctionNames: options.allowedFunctionNames,
         })
       : undefined;
@@ -883,7 +883,7 @@ export class ChatGoogleGenerativeAI
       | z.ZodType<RunOutput>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       | Record<string, any>,
-    config?: StructuredOutputMethodOptions<boolean>
+    config?: StructuredOutputMethodOptions<boolean> & { toolChoice?: string }
   ):
     | Runnable<BaseLanguageModelInput, RunOutput>
     | Runnable<
@@ -902,6 +902,7 @@ export class ChatGoogleGenerativeAI
     }
 
     let functionName = name ?? "extract";
+    let toolChoice = config?.toolChoice ?? "any";
     let outputParser: BaseLLMOutputParser<RunOutput>;
     let tools: GoogleGenerativeAIFunctionDeclarationsTool[];
     if (isZodSchema(schema)) {
@@ -924,6 +925,7 @@ export class ChatGoogleGenerativeAI
         returnSingle: true,
         keyName: functionName,
         zodSchema: schema,
+        toolChoice,
       });
     } else {
       let geminiFunctionDefinition: GenerativeAIFunctionDeclaration;
@@ -949,10 +951,12 @@ export class ChatGoogleGenerativeAI
       outputParser = new GoogleGenerativeAIToolsOutputParser<RunOutput>({
         returnSingle: true,
         keyName: functionName,
+        toolChoice,
       });
     }
     const llm = this.bind({
       tools,
+      tool_choice: toolChoice,
     });
 
     if (!includeRaw) {
